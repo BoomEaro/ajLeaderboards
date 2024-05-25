@@ -1,7 +1,7 @@
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow").version("6.1.0")
+    id("com.github.johnrengelman.shadow").version("8.1.0")
     id("io.github.slimjar").version("1.3.0")
 }
 
@@ -97,33 +97,7 @@ tasks.shadowJar {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            artifact(tasks["jar"])
-        }
-    }
-
-    repositories {
-
-        val mavenUrl = "https://repo.ajg0702.us/releases"
-
-        if(!System.getenv("REPO_TOKEN").isNullOrEmpty()) {
-            maven {
-                url = uri(mavenUrl)
-                name = "ajRepo"
-
-                credentials {
-                    username = "plugins"
-                    password = System.getenv("REPO_TOKEN")
-                }
-            }
-        }
-    }
-}
-
-
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
