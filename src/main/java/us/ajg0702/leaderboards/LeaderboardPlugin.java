@@ -82,6 +82,8 @@ public class LeaderboardPlugin extends JavaPlugin {
 
     private boolean shuttingDown = false;
 
+    private boolean enabled = false;
+
     @Override
     public void onLoad() {
         try {
@@ -163,33 +165,7 @@ public class LeaderboardPlugin extends JavaPlugin {
             }
         });
 
-        signManager = new SignManager(this);
-        headManager = new HeadManager(this);
-        headUtils = new HeadUtils(getLogger());
-        armorStandManager = new ArmorStandManager(this);
-
-        resetSaver = new ResetSaver(this);
-
-        cache = new Cache(this);
-
-        List<String> initialBoards = cache.getBoards();
-
-        getLogger().info("Loaded "+initialBoards.size()+" boards");
-
-        extraManager = new ExtraManager(this);
-
-
-        topManager = new TopManager(this, initialBoards);
-
-        reloadInterval();
-
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::scheduleResets, 0, 15 * 60 * 20);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(
-                this,
-                () -> offlineUpdaters.forEach((b, u) -> u.progressLog()),
-                5 * 20,
-                30 * 20
-        );
+        performEnable();
 
         Metrics metrics = new Metrics(this, 9338);
         metrics.addCustomChart(new Metrics.SimplePie("storage_method", () -> getCache().getMethod().getName()));
@@ -206,7 +182,7 @@ public class LeaderboardPlugin extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new Listeners(this), this);
 
-        getLogger().info("ajLeaderboards v"+getDescription().getVersion()+" by ajgeiss0702 enabled!");
+        getLogger().info("ajLeaderboards v"+getDescription().getVersion()+ " by ajgeiss0702 enabled!");
     }
 
     private Iterable<String> getSignPath(int i) {
@@ -219,6 +195,52 @@ public class LeaderboardPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         shuttingDown = true;
+
+        performDisable();
+
+        getLogger().info("ajLeaderboards v"+getDescription().getVersion()+" disabled.");
+    }
+
+    public void performEnable() {
+        if (this.enabled) {
+            return;
+        }
+
+        signManager = new SignManager(this);
+        headManager = new HeadManager(this);
+        headUtils = new HeadUtils(getLogger());
+        armorStandManager = new ArmorStandManager(this);
+
+        resetSaver = new ResetSaver(this);
+
+        cache = new Cache(this);
+
+        List<String> initialBoards = cache.getBoards();
+
+        getLogger().info("Loaded "+initialBoards.size()+" boards");
+
+        extraManager = new ExtraManager(this);
+
+        topManager = new TopManager(this, initialBoards);
+
+        reloadInterval();
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::scheduleResets, 0, 15 * 60 * 20);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(
+                this,
+                () -> offlineUpdaters.forEach((b, u) -> u.progressLog()),
+                5 * 20,
+                30 * 20
+        );
+
+        this.enabled = true;
+    }
+
+    public void performDisable() {
+        if (!this.enabled) {
+            return;
+        }
+
         if(getContextLoader() != null) getContextLoader().checkReload(false);
         Bukkit.getScheduler().cancelTasks(this);
         if(getTopManager() != null) getTopManager().shutdown();
@@ -245,14 +267,14 @@ public class LeaderboardPlugin extends JavaPlugin {
         killWorkers(5000);
         getLogger().info("Remaining workers killed");
 
-        getLogger().info("ajLeaderboards v"+getDescription().getVersion()+" disabled.");
-
         Bukkit.getScheduler().getActiveWorkers().forEach(bukkitWorker -> {
             Debug.info("Active worker: "+bukkitWorker.getOwner().getDescription().getName()+" "+bukkitWorker.getTaskId());
             for (StackTraceElement stackTraceElement : bukkitWorker.getThread().getStackTrace()) {
                 Debug.info(" - "+stackTraceElement);
             }
         });
+
+        this.enabled = false;
     }
 
     private void killWorkers(int waitForDeath) {
