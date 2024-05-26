@@ -117,7 +117,7 @@ public class TopManager {
         StatEntry cached = positionCache.getIfPresent(key);
 
         if (this.shutdown) {
-            return cached;
+            return StatEntry.loading(plugin, position, board, type);
         }
 
         if (cached == null) {
@@ -214,7 +214,7 @@ public class TopManager {
         StatEntry cached = statEntryCache.getIfPresent(key);
 
         if (shutdown) {
-            return cached;
+            return StatEntry.loading(player, key.getBoardType());
         }
 
         if (cached == null) {
